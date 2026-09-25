@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import ScheduleCard from "@/components/ScheduleCard";
 import CopyLinkButton from "@/components/CopyLinkButton";
+import FundProjectButton from "./FundProjectButton";
 import AddressLabel from "@/components/AddressLabel";
 import SearchFilterBar from "@/components/SearchFilterBar";
 import EmptyState, { NoSearchResultsEmptyState } from "@/components/EmptyState";
@@ -178,8 +179,9 @@ export default function ProfileView({ address }: ProfileViewProps) {
               </div>
             </div>
 
-            {/* Copy Profile Link Sharing Button (Issue #648) */}
+            {/* Profile actions: fund this project (#812) + share (#648) */}
             <div className="flex items-center gap-3">
+              <FundProjectButton address={address} />
               <CopyLinkButton label="Copy Profile Link" />
               {stats.activeCount > 0 && (
                 <button

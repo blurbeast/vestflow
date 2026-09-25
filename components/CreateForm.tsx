@@ -1,5 +1,5 @@
 "use client";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useToast } from "@/components/Toast";
 import InfoTooltip from "@/components/InfoTooltip";
 import TokenSelector from "@/components/TokenSelector";
@@ -45,6 +45,18 @@ function isValidStellarAddress(addr: string): boolean {
 /** Minimal Stellar contract or account address check: starts with C or G, length 56, alphanumeric. */
 function isValidTokenAddress(addr: string): boolean {
   return /^[CG][A-Z2-7]{55}$/.test(addr.trim());
+}
+
+/**
+ * Seed value for the beneficiary field (#812).
+ *
+ * Only a well-formed Stellar address is accepted: a receiver arriving from a
+ * query parameter is untrusted input and must never be seeded into a field
+ * that gets submitted on-chain.
+ */
+export function prefillBeneficiary(value: string | undefined): string {
+  const candidate = (value ?? "").trim();
+  return isValidStellarAddress(candidate) ? candidate : "";
 }
 
 function validateForm(form: FormState): FormErrors {
@@ -320,12 +332,19 @@ function estimateClaimable(
   return (totalStroops * BigInt(elapsed)) / BigInt(durationSecs);
 }
 
-export default function CreateForm() {
+interface CreateFormProps {
+  /**
+   * Receiver to open with, set by the profile "Fund this project" button (#812).
+   */
+  initialBeneficiary?: string;
+}
+
+export default function CreateForm({ initialBeneficiary }: CreateFormProps = {}) {
   const { publicKey } = useWallet();
   const { addToast, updateToast } = useToast();
   const [step, setStep] = useState<"form" | "confirm">("form");
   const [form, setForm] = useState<FormState>({
-    beneficiary: "",
+    beneficiary: prefillBeneficiary(initialBeneficiary),
     tokenAddress: NATIVE_TOKEN,
     amount: "",
     startDate: "",
@@ -348,6 +367,14 @@ export default function CreateForm() {
   const [errMsg, setErrMsg] = useState("");
   const [previewDate, setPreviewDate] = useState("");
   const [balanceError, setBalanceError] = useState("");
+
+  // Adopt a receiver that arrives after mount (client-side navigation from
+  // one profile to another), without ever overwriting what the user typed.
+  useEffect(() => {
+    const prefilled = prefillBeneficiary(initialBeneficiary);
+    if (!prefilled) return;
+    setForm((f) => (f.beneficiary.trim() ? f : { ...f, beneficiary: prefilled }));
+  }, [initialBeneficiary]);
 
   const set = (k: keyof FormState, v: string | boolean) =>
     setForm((f) => ({ ...f, [k]: v }) as FormState);
@@ -481,7 +508,7 @@ export default function CreateForm() {
     setTouched({});
     setLockupEdited(false);
     setForm({
-      beneficiary: "",
+      beneficiary: prefillBeneficiary(initialBeneficiary),
       tokenAddress: NATIVE_TOKEN,
       amount: "",
       startDate: "",
