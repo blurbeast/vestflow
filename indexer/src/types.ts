@@ -61,6 +61,12 @@ export interface TopReceiverRow {
   sender_count: number;
 }
 
+export interface TopSenderRow {
+  account: string;
+  total_rate_per_sec: string;
+  receiver_count: number;
+}
+
 /** A single indexed contract event row. */
 export interface IndexedEvent {
   id: string;

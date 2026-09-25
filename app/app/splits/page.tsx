@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import SplitsPieChart from "@/components/SplitsPieChart";
+import SplitWeightEditor from "@/components/SplitWeightEditor";
 import { useWallet } from "@/lib/WalletContext";
 import { NETWORK } from "@/lib/stellar";
 
@@ -125,49 +126,13 @@ export default function SplitsPage() {
               onSelect={setSelectedAddress}
             />
 
-            {/* Receiver table */}
+            {/* Receiver table — drag-and-drop weight editor (#792) */}
             <div className="border-t border-white/5 pt-4">
               <h3 className="text-sm font-medium text-zinc-300 mb-3">All Receivers</h3>
-               <div className="overflow-x-auto -mx-1 px-1">
-                 <table className="w-full text-sm min-w-[28rem]">
-                  <thead>
-                    <tr className="text-xs text-zinc-500 uppercase tracking-wider">
-                      <th className="text-left py-2 px-3">Address</th>
-                      <th className="text-right py-2 px-3">Weight (bps)</th>
-                      <th className="text-right py-2 px-3">Percentage</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {splits.receivers.map((receiver, i) => {
-                      const pct = totalBps > 0 ? (receiver.weight_bps / totalBps) * 100 : 0;
-                      const isSelected = selectedAddress === receiver.address;
-                      return (
-                        <tr
-                          key={receiver.address + i}
-                          className={`cursor-pointer transition-colors ${
-                            isSelected ? "bg-white/5" : "hover:bg-white/[0.02]"
-                          }`}
-                          onClick={() =>
-                            setSelectedAddress(
-                              selectedAddress === receiver.address ? null : receiver.address,
-                            )
-                          }
-                        >
-                          <td className="py-2.5 px-3 font-mono text-xs text-zinc-300">
-                            {receiver.address.slice(0, 10)}...{receiver.address.slice(-6)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-zinc-300">
-                            {receiver.weight_bps.toLocaleString()}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-zinc-300">
-                            {pct.toFixed(1)}%
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <SplitWeightEditor
+                receivers={splits.receivers}
+                onChange={(next) => setSplits((prev) => (prev ? { ...prev, receivers: next } : prev))}
+              />
             </div>
           </div>
         )}
