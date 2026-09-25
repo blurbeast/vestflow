@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useToast } from "@/components/Toast";
 import VestingChart from "@/components/VestingChart";
+import StreamingBalanceChart from "@/components/StreamingBalanceChart";
 import ClaimModal from "@/components/ClaimModal";
 import TransferBeneficiaryModal from "@/components/TransferBeneficiaryModal";
 import AddressLabel from "@/components/AddressLabel";
@@ -355,6 +356,18 @@ export default function ScheduleDetailPage() {
           <div>
             <p className="text-xs text-zinc-500 mb-3 uppercase tracking-wider">Vesting Curve</p>
             <VestingChart schedule={schedule} />
+          </div>
+
+          {/* Historical streaming balance (#791) */}
+          <div>
+            <p className="text-xs text-zinc-500 mb-3 uppercase tracking-wider">
+              Balance History (30 days)
+            </p>
+            <StreamingBalanceChart
+              account={schedule.grantor}
+              token={schedule.token}
+              days={30}
+            />
           </div>
 
           {/* Progress bar — dual layer: vested + claimed */}

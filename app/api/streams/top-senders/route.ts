@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { queryTopSenders } from "@/indexer/src/db";
+import { parseNetwork } from "@/indexer/src/config";
 import { createIpBasedRateLimiter } from "@/lib/rateLimit";
 import { withLogging } from "@/lib/requestLogger";
 
@@ -10,8 +12,9 @@ export const GET = withLogging(async function GET(request: NextRequest): Promise
 
   try {
     const token = request.nextUrl.searchParams.get("token");
-    const limitStr = request.nextUrl.searchParams.get("limit") || "10";
-    const limit = Math.min(Math.max(1, parseInt(limitStr, 10) || 10), 50);
+    const limitStr = request.nextUrl.searchParams.get("limit") || "20";
+    const limit = Math.min(Math.max(1, parseInt(limitStr, 10) || 20), 50);
+    const network = parseNetwork(request.nextUrl.searchParams.get("network") || undefined);
 
     if (!token) {
       return NextResponse.json(
@@ -21,11 +24,17 @@ export const GET = withLogging(async function GET(request: NextRequest): Promise
     }
 
     const now = Math.floor(Date.now() / 1000);
-    const topSenders: Array<{
+    let topSenders: Array<{
       account: string;
       total_rate_per_sec: string;
       receiver_count: number;
     }> = [];
+    try {
+      topSenders = queryTopSenders(token, limit, network);
+    } catch (dbError) {
+      console.error("queryTopSenders failed, returning empty list:", dbError);
+      topSenders = [];
+    }
 
     const response = {
       token,

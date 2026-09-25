@@ -207,6 +207,9 @@ export default function Navbar() {
           <Link href="/lists" className="hover:text-white transition-colors">
             Lists
           </Link>
+          <Link href="/leaderboard" className="hover:text-white transition-colors">
+            Leaderboard
+          </Link>
           <Link
             href="/analytics"
             className="hover:text-white transition-colors"

@@ -13,6 +13,7 @@ import type {
   StreamHistoryRow,
   SqueezeEventRow,
   TopReceiverRow,
+  TopSenderRow,
   TvlStats,
 } from "./types";
 
@@ -3224,6 +3225,57 @@ export function queryTopReceivers(
 
   list.sort((a, b) => {
     const diff = BigInt(b.total_incoming_rate_per_sec) - BigInt(a.total_incoming_rate_per_sec);
+    if (diff > 0n) return 1;
+    if (diff < 0n) return -1;
+    return a.account.localeCompare(b.account);
+  });
+
+  const cappedLimit = Math.max(1, Math.min(limit, 50));
+  return list.slice(0, cappedLimit);
+}
+
+// ── Top Senders Leaderboard (#794) ────────────────────────────────────
+
+export function queryTopSenders(
+  token: string,
+  limit: number = 20,
+  network?: NetworkName,
+): TopSenderRow[] {
+  const db = getDb(network);
+  const now = Math.floor(Date.now() / 1000);
+
+  const activeStreams = db
+    .prepare(
+      `SELECT account, receiver, rate_per_second
+       FROM drips_streams
+       WHERE token = ? AND ended_at IS NULL
+         AND (estimated_end_time IS NULL OR estimated_end_time > ?)`,
+    )
+    .all(token, now) as { account: string; receiver: string; rate_per_second: string }[];
+
+  const sendersMap = new Map<string, { totalRate: bigint; receivers: Set<string> }>();
+
+  for (const stream of activeStreams) {
+    let entry = sendersMap.get(stream.account);
+    if (!entry) {
+      entry = { totalRate: 0n, receivers: new Set() };
+      sendersMap.set(stream.account, entry);
+    }
+    entry.totalRate += BigInt(stream.rate_per_second);
+    entry.receivers.add(stream.receiver);
+  }
+
+  const list: TopSenderRow[] = [];
+  for (const [account, entry] of sendersMap.entries()) {
+    list.push({
+      account,
+      total_rate_per_sec: entry.totalRate.toString(),
+      receiver_count: entry.receivers.size,
+    });
+  }
+
+  list.sort((a, b) => {
+    const diff = BigInt(b.total_rate_per_sec) - BigInt(a.total_rate_per_sec);
     if (diff > 0n) return 1;
     if (diff < 0n) return -1;
     return a.account.localeCompare(b.account);

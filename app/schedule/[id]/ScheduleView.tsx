@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import CopyButton from "@/components/CopyButton";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import VestingChart from "@/components/VestingChart";
+import StreamingBalanceChart from "@/components/StreamingBalanceChart";
 import NotificationSubscription from "@/components/NotificationSubscription";
 import AddressLabel from "@/components/AddressLabel";
 import TopUpModal from "@/components/TopUpModal";
@@ -193,6 +194,16 @@ export default function ScheduleView({ schedule, claimable: initialClaimable }: 
         <div className="card p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4">Vesting Timeline</h2>
           <VestingChart schedule={schedule as any} />
+        </div>
+
+        {/* Historical streaming balance (#791) */}
+        <div className="card p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4">Balance History (30 days)</h2>
+          <StreamingBalanceChart
+            account={schedule.grantor}
+            token={schedule.token}
+            days={30}
+          />
         </div>
 
         {/* Schedule Details */}
